@@ -13,6 +13,7 @@ import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import com.ryoga.k17124kk.signalloger_multi.R;
@@ -27,10 +28,12 @@ import org.altbeacon.beacon.MonitorNotifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
@@ -51,11 +54,12 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     private File_ReadWriter file_readWriter;
 
-
     private long startTime;
-    private long nowTime;
-
+    private String nowTime;
     private String fileName = "BleStrengthData";
+
+
+    private int timeMode = 1;//相対時間(1)か絶対時間(2)か
 
 
     @Override
@@ -105,7 +109,19 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             @Override
             public void onClick(View view) {
 
+                Log.d("MYE_D", "aa");
                 startTime = getFirstDate();
+
+
+                RadioGroup radioGroup = findViewById(R.id.radiogoup);
+                if (radioGroup.getCheckedRadioButtonId() == R.id.radioButton1) {
+                    timeMode = 1;
+                    Log.d("MYE_D", timeMode + "");
+                } else if (radioGroup.getCheckedRadioButtonId() == R.id.radioButton2) {
+                    timeMode = 2;
+                    Log.d("MYE_D", timeMode + "");
+                }
+
 
 //
                 //レンジングの開始
@@ -199,7 +215,18 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
 
                 String rssi = "";
-                nowTime = getDate();
+
+                if (timeMode == 1) {//相対時間
+                    nowTime = String.valueOf(getDate());
+                } else if (timeMode == 2) {//絶対時間
+                    Date date = new Date();
+//                    Log.d("MYE_DDD", date.toString());
+                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
+//                    Log.d("MYE_DD", sdf.format(date));
+
+                    nowTime = sdf.format(date);
+                }
+
 
 //                rssi += nowTime - startTime;
 

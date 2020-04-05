@@ -18,6 +18,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -36,8 +37,10 @@ import org.altbeacon.beacon.MonitorNotifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 
 public class LoggingwithJudgesActivity extends AppCompatActivity implements BeaconConsumer {
 
@@ -61,7 +64,7 @@ public class LoggingwithJudgesActivity extends AppCompatActivity implements Beac
 
 
     private long startTime;
-    private long nowTime;
+    private String nowTime;
 
     private String fileName = "BleStrengthData";
     private String fileName_Filtered = "BleStrengthData_Lowpath";
@@ -75,6 +78,9 @@ public class LoggingwithJudgesActivity extends AppCompatActivity implements Beac
 
 
     private SoundController soundController;
+
+
+    private int timeMode = 1;//相対時間(1)か絶対時間(2)か
 
 
     @Override
@@ -128,6 +134,16 @@ public class LoggingwithJudgesActivity extends AppCompatActivity implements Beac
             public void onClick(View view) {
 
                 startTime = getFirstDate();
+
+                RadioGroup radioGroup = findViewById(R.id.radiogoup);
+                if (radioGroup.getCheckedRadioButtonId() == R.id.radioButton1) {
+                    timeMode = 1;
+                    Log.d("MYE_D", timeMode + "");
+                } else if (radioGroup.getCheckedRadioButtonId() == R.id.radioButton2) {
+                    timeMode = 2;
+                    Log.d("MYE_D", timeMode + "");
+                }
+
 
                 EditText editText_sample = findViewById(R.id.editText_sample_F);
                 sample = Integer.valueOf(editText_sample.getText().toString());
@@ -247,13 +263,20 @@ public class LoggingwithJudgesActivity extends AppCompatActivity implements Beac
                 String rssi = "";
                 String rssi_Filtered = "";
 
-                nowTime = getNowDate();
+                if (timeMode == 1) {//相対時間
+                    nowTime = String.valueOf(getDate());
+                } else if (timeMode == 2) {//絶対時間
+                    Date date = new Date();
+//                    Log.d("MYE_DDD", date.toString());
+                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
+//                    Log.d("MYE_DD", sdf.format(date));
 
-                String time = Long.toString(nowTime - startTime);
+                    nowTime = sdf.format(date);
+                }
 
 
-                rssi += time;
-                rssi_Filtered += time;
+                rssi += nowTime;
+                rssi_Filtered += nowTime;
 
 
                 for (DataController dataController : dataControllers) {
@@ -261,7 +284,7 @@ public class LoggingwithJudgesActivity extends AppCompatActivity implements Beac
                     for (Beacon beacon : beacons) {
                         if (dataController.getDataSet().getUuid().equals(beacon.getId1().toString()) && dataController.getDataSet().getMajor().equals(beacon.getId2().toString()) && dataController.getDataSet().getMinor().equals(beacon.getId3().toString())) {
 
-                            dataController.setDataSetRssi(time, beacon.getRssi());
+                            dataController.setDataSetRssi(nowTime, beacon.getRssi());
                             dataController.getDataSet().setExist(true);
 
                             rssi += "," + dataController.getDataSet().getRssi();
@@ -285,12 +308,12 @@ public class LoggingwithJudgesActivity extends AppCompatActivity implements Beac
                     }
 
                     if (flag) {
-                        file_readWriter.writeFile_LoggingData(dataController.getDataSet().getMemo(), time + "," + dataController.getDataSet().getRssi());
+                        file_readWriter.writeFile_LoggingData(dataController.getDataSet().getMemo(), nowTime + "," + dataController.getDataSet().getRssi());
 
                         if (filter_Mode.equals(FILTER_MODE[0])) {
-                            file_readWriter.writeFile_LoggingData(dataController.getDataSet().getMemo() + "_Lowpath_Median", time + "," + dataController.getFilterd_rssi());
+                            file_readWriter.writeFile_LoggingData(dataController.getDataSet().getMemo() + "_Lowpath_Median", nowTime + "," + dataController.getFilterd_rssi());
                         } else if (filter_Mode.equals(FILTER_MODE[1])) {
-                            file_readWriter.writeFile_LoggingData(dataController.getDataSet().getMemo() + "_Lowpath_MoveAverage", time + "," + dataController.getFilterd_rssi());
+                            file_readWriter.writeFile_LoggingData(dataController.getDataSet().getMemo() + "_Lowpath_MoveAverage", nowTime + "," + dataController.getFilterd_rssi());
 
                         }
 
@@ -331,6 +354,10 @@ public class LoggingwithJudgesActivity extends AppCompatActivity implements Beac
 
     public static long getNowDate() {
         return System.currentTimeMillis();
+    }
+
+    public static long getDate() {
+        return getNowDate() - getFirstDate();
     }
 
 

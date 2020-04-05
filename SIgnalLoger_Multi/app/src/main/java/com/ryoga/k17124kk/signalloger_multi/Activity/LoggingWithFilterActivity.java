@@ -14,6 +14,7 @@ import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -30,10 +31,12 @@ import org.altbeacon.beacon.MonitorNotifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 
 public class LoggingWithFilterActivity extends AppCompatActivity implements BeaconConsumer {
 
@@ -57,7 +60,7 @@ public class LoggingWithFilterActivity extends AppCompatActivity implements Beac
 
 
     private long startTime;
-    private long nowTime;
+    private String nowTime;
 
     private String fileName = "BleStrengthData";
     private String fileName_Filtered = "BleStrengthData_Lowpath";
@@ -68,6 +71,8 @@ public class LoggingWithFilterActivity extends AppCompatActivity implements Beac
 
     private int sample = 0;
     private int count = 0;
+
+    private int timeMode = 1;//相対時間(1)か絶対時間(2)か
 
 
     @Override
@@ -125,6 +130,16 @@ public class LoggingWithFilterActivity extends AppCompatActivity implements Beac
         button_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
+                RadioGroup radioGroup = findViewById(R.id.radiogoup);
+                if (radioGroup.getCheckedRadioButtonId() == R.id.radioButton1) {
+                    timeMode = 1;
+                    Log.d("MYE_D", timeMode + "");
+                } else if (radioGroup.getCheckedRadioButtonId() == R.id.radioButton2) {
+                    timeMode = 2;
+                    Log.d("MYE_D", timeMode + "");
+                }
+
 
                 startTime = getFirstDate();
 
@@ -245,19 +260,26 @@ public class LoggingWithFilterActivity extends AppCompatActivity implements Beac
                 String rssi = "";
                 String rssi_Filtered = "";
 
-                nowTime = getNowDate();
-//                rssi += nowTime - startTime;
+                if (timeMode == 1) {//相対時間
+                    nowTime = String.valueOf(getDate());
+                } else if (timeMode == 2) {//絶対時間
+                    Date date = new Date();
+//                    Log.d("MYE_DDD", date.toString());
+                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
+//                    Log.d("MYE_DD", sdf.format(date));
 
-                String time = Long.toString(nowTime - startTime);
+                    nowTime = sdf.format(date);
+                }
 
-                rssi += time;
-                rssi_Filtered += time;
+
+                rssi += nowTime;
+                rssi_Filtered += nowTime;
 
                 for (DataController dataController : dataControllers) {
                     for (Beacon beacon : beacons) {
                         if (dataController.getDataSet().getUuid().equals(beacon.getId1().toString()) && dataController.getDataSet().getMajor().equals(beacon.getId2().toString()) && dataController.getDataSet().getMinor().equals(beacon.getId3().toString())) {
 
-                            dataController.setDataSetRssi(time, beacon.getRssi());
+                            dataController.setDataSetRssi(nowTime, beacon.getRssi());
                             dataController.getDataSet().setExist(true);
 
 
@@ -284,8 +306,8 @@ public class LoggingWithFilterActivity extends AppCompatActivity implements Beac
                 String rs = "";
                 String rs_F = "";
 
-                rs += time + ",";
-                rs_F += time + ",";
+                rs += nowTime + ",";
+                rs_F += nowTime + ",";
                 for (DataController d : dataControllers) {
                     rs += "," + d.getDataSet().getRssi();
                     rs_F += "," + d.getFilterd_rssi();
@@ -315,6 +337,10 @@ public class LoggingWithFilterActivity extends AppCompatActivity implements Beac
 
     public static long getNowDate() {
         return System.currentTimeMillis();
+    }
+
+    public static long getDate() {
+        return getNowDate() - getFirstDate();
     }
 
 
